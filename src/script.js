@@ -115,6 +115,7 @@ function updateMeshPositions() {
     mesh3.position.x = -2;
   }
 }
+updateMeshPositions();
 window.addEventListener('resize', updateMeshPositions);
 
 scene.add(mesh1, mesh2, mesh3);

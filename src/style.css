@@ -26,6 +26,10 @@
   padding-right: 10%;
   gap: 50px;
 }
+/* img {
+  width: 500px;
+  height: 800px;
+} */
 
 @media (max-width: 992px) {
   .section {
@@ -33,6 +37,12 @@
     padding-top: 100px;
   }
 }
+/* @media (max-width: 1200px) {
+  img {
+    width: fit-content;
+    height: fit-content;
+  }
+} */
 
 /* section:nth-child(odd) {
   justify-content: flex-end;

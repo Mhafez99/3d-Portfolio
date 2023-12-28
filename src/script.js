@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import gsap from "gsap";
+import * as dat from "lil-gui";
+
+const gui = new dat.GUI();
 
 // Textures
 const textureLoader = new THREE.TextureLoader();
@@ -37,6 +40,10 @@ const scene = new THREE.Scene();
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
+// Parameters
+const parameters = {};
+parameters.materialColor = "#ffeded";
+
 // Screen Sizes
 const sizes = {
   width: window.innerWidth,
@@ -53,10 +60,11 @@ window.addEventListener("resize", () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// Mesh Material
+//  ----------------------------------------- Material-----------------------------------------
+
 // Water material
 const waterMaterial = new THREE.MeshPhongMaterial({
-  color: "#ffeded",
+  color: parameters.materialColor,
   map: watercolor,
   displacementScale: 0.01,
   displacementMap: waterDisp,
@@ -67,7 +75,7 @@ const waterMaterial = new THREE.MeshPhongMaterial({
 
 // stone material
 const stoneMaterial = new THREE.MeshStandardMaterial({
-  color: "#ffeded",
+  color: parameters.materialColor,
   map: stoneColor,
   displacementScale: 0.01,
   displacementMap: stoneHeight,
@@ -79,21 +87,21 @@ const stoneMaterial = new THREE.MeshStandardMaterial({
 
 // lava material
 const lavaMaterial = new THREE.MeshStandardMaterial({
-  color: "#ffeded",
+  color: parameters.materialColor,
   map: lavaColor,
   displacementScale: 0.1,
   displacementMap: lavaDisp,
   normalMap: lavaNormal,
   aoMap: lavaOcc,
   roughness: 0.1,
-  roughnessMap: lavaMask,
+  roughnessMap: lavaRoughness,
   alphaMap: lavaMask,
 });
 
 // Distance between Meshes
 const objectsDistance = 4;
 
-// Meshes
+//  ----------------------------------------- Mesh -----------------------------------------
 const mesh1 = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), lavaMaterial);
 const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2, 4), stoneMaterial);
 const mesh3 = new THREE.Mesh(
@@ -103,6 +111,25 @@ const mesh3 = new THREE.Mesh(
 mesh1.position.y = 0;
 mesh2.position.y = -objectsDistance;
 mesh3.position.y = -objectsDistance * 2;
+//  ----------------------------------------- Particles -----------------------------------------
+const particlesCount = 2000;
+const positions = new Float32Array(particlesCount * 3);
+for (let i = 0; i < particlesCount; i++) {
+  positions[i * 3] = (Math.random() - 0.5) * 10;
+  positions[i * 3 + 1] = objectsDistance * 0.5 - Math.random() * 10 * objectsDistance * 3;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+}
+const particlesGeometry = new THREE.BufferGeometry();
+particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+const particlesMaterial = new THREE.PointsMaterial({
+  color: parameters.materialColor,
+  size: 0.03,
+  sizeAttenuation: true
+});
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
+
+//  ----------------------------------------- Responsive -----------------------------------------
 
 function updateMeshPositions() {
   if (window.innerWidth <= 992) {
@@ -121,12 +148,20 @@ window.addEventListener('resize', updateMeshPositions);
 scene.add(mesh1, mesh2, mesh3);
 const sectionsMeshes = [mesh1, mesh2, mesh3];
 
+//  ----------------------------------------- GUI -----------------------------------------
+gui.addColor(parameters, "materialColor").onChange(() => {
+  particlesMaterial.color.set(parameters.materialColor);
+});
+
+
 /**
  * Lights
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 1);
 directionalLight.position.set(1, 1, 0);
 scene.add(directionalLight);
+
+
 
 // Camera
 const cameraGroup = new THREE.Group();
@@ -189,12 +224,14 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - prevTime;
   prevTime = elapsedTime;
+
   // Animate camera
   camera.position.y = (-scrollY / sizes.height) * objectsDistance;
+
   const parallaxX = cursor.x;
   const parallaxY = -cursor.y;
 
-  // Camera Animation
+  // Camera Animation (Easing | Smoothing | Lerping) To Slow The cameraGroup animation
   cameraGroup.position.x +=
     (parallaxX - cameraGroup.position.x) * 5 * deltaTime;
   cameraGroup.position.y +=
